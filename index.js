@@ -26,6 +26,7 @@ bot.onText(/\/story (.+)/, async (msg, match) => {
   }
 
   try {
+    await bot.sendMessage(chatId, "Generating story, plz wait...");
     const prompt = `Make a story in simple english language about "${resp}" within 1000 text using this JSON schema: {"imagePrompt" : "A short prompt to make an image for the story", "story" : "The story in text no line break", "filename" : "custom-filename(nospace)"}`;
     
     const result = await model.generateContent(prompt);
