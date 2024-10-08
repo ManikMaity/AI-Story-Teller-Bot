@@ -16,15 +16,21 @@ const model = genAI.getGenerativeModel({
 });
 const bot = new TelegramBot(process.env.BOT_TOKEN, { polling: true });
 
-bot.on("message", async (msg) => {
+bot.onText(/\/story (.+)/, async (msg, match) => {
   const chatId = msg.chat.id;
+  const resp = match[1];
+
+  if (!resp) {
+    bot.sendMessage(chatId, "Please provide a prompt.");
+    return;
+  }
 
   try {
-    const prompt = `Make a story in simple english language about "${msg.text}" within 1000 text using this JSON schema: {"imagePrompt" : "A short prompt to make an image for the story", "story" : "The story in text no line break", "filename" : "custom-filename(nospace)"}`;
+    const prompt = `Make a story in simple english language about "${resp}" within 1000 text using this JSON schema: {"imagePrompt" : "A short prompt to make an image for the story", "story" : "The story in text no line break", "filename" : "custom-filename(nospace)"}`;
     
     const result = await model.generateContent(prompt);
     const responseOBJ = JSON.parse(result.response.text());
-    console.log(responseOBJ);
+    // console.log(responseOBJ);
 
     // Fetch the image
     const storyImage = await getImage(responseOBJ.imagePrompt);
@@ -37,6 +43,7 @@ bot.on("message", async (msg) => {
     // Convert text to speech
     const storyAudio = await textToSpeech(responseOBJ.story, responseOBJ.filename);
     await bot.sendDocument(chatId, storyAudio);
+    await fs.unlink(storyAudio);
 
     // Send the story text
     bot.sendMessage(chatId, responseOBJ.story);
